@@ -121,6 +121,7 @@ verifyForm.addEventListener('submit', async (e) => {
                 </div>
             `;
             setTimeout(() => {
+                sessionStorage.setItem('assignmentUser', username);
                 window.location.href = '/assignment/dashboard';
             }, 1800);
         } else {
