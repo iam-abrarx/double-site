@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure OTP Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css?v=1.0.6" />
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <main class="card">
+        <div class="site-header" style="text-align: center; margin-bottom: 1.5rem;">
+            <span class="site-badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;">Portal:  Main site</span>
+        </div>
+        <div class="tabs">
+            <button id="tab-login" class="tab-btn active">Sign In</button>
+            <button id="tab-register" class="tab-btn">Register</button>
+        </div>
+
+        <form id="authForm" class="form-container">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required placeholder="Enter username" />
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="••••••••" />
+            </div>
+            <button type="submit" id="submitBtn" class="btn primary-btn">Sign In</button>
+        </form>
+
+        <div id="otpSection" class="otp-container hidden">
+            <div class="divider"></div>
+            <p class="otp-desc">To complete verification, request an OTP. It will be sent to your Telegram bot.</p>
+            <button id="requestOtpBtn" class="btn otp-btn">Request Verification Code</button>
+
+            <form id="verifyForm" class="hidden" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div class="input-group">
+                    <label for="otpCode">Verification Code</label>
+                    <input type="text" id="otpCode" maxlength="6" placeholder="Enter 6-digit code" style="text-align: center; font-size: 1.25rem; letter-spacing: 0.15em;" required />
+                </div>
+                <button type="submit" id="verifyOtpBtn" class="btn primary-btn" style="width: 100%;">Verify & Log In</button>
+            </form>
+        </div>
+
+        <div id="emailOtpContainer" style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">
+            <a href="#" id="emailOtpLink" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">Send OTP through email</a>
+        </div>
+        <div id="statusMessage" class="status-msg hidden"></div>
+    </main>
+    <script src="app.js?v=1.0.6"></script>
+</body>
+</html>

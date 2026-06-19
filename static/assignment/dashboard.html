@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assignment Site Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .dashboard-container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            z-index: 2;
+            animation: slideIn 0.5s ease forwards;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+        }
+        .info-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-2px);
+        }
+        .info-card h3 {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .info-card p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .logout-btn {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            width: 100%;
+            text-decoration: none;
+            padding: 0.85rem;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background: var(--error-color);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .vss-card {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+        .vss-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vss-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 5px dashed rgba(16, 185, 129, 0.2);
+            border-top: 5px solid var(--primary-color);
+            animation: spin 4s linear infinite;
+        }
+        .vss-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+            z-index: 2;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <main class="dashboard-container">
+        <!-- VSS Panel -->
+        <div id="vssPanel" class="vss-card">
+            <div style="font-size: 4.5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.4));">🛡️</div>
+            <h1 style="font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Operation Successful</h1>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">Evaluating Vulnerability Severity Score...</p>
+            
+            <div class="vss-container">
+                <div class="vss-ring"></div>
+                <div id="vssValue" class="vss-value">10</div>
+            </div>
+            
+            <p id="vssStatus" style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; animation: pulse 1.2s infinite; height: 1.5rem;">Scanning memory buffers...</p>
+        </div>
+
+        <!-- Dashboard Details (hidden initially) -->
+        <div id="dashboardDetails" class="hidden">
+            <div class="header">
+                <div>
+                    <h1>Assignment site</h1>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Secure Session Details</p>
+                </div>
+                <span class="badge">VSS: 0 (Secure)</span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Vulnerability Score (VSS)</h3>
+                    <p style="color: var(--primary-color) !important;">0 (No Vulnerabilities)</p>
+                </div>
+                <div class="info-card">
+                    <h3>Verification Entity</h3>
+                    <p>otp_assignment_bot</p>
+                </div>
+                <div class="info-card">
+                    <h3>Workspace Status</h3>
+                    <p>Active</p>
+                </div>
+                <div class="info-card">
+                    <h3>Authentication</h3>
+                    <p>2FA Success</p>
+                </div>
+            </div>
+
+            <button onclick="window.location.href='/assignment'" class="logout-btn">Terminate Session & Logout</button>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const vssValue = document.getElementById("vssValue");
+            const vssStatus = document.getElementById("vssStatus");
+            const vssPanel = document.getElementById("vssPanel");
+            const dashboardDetails = document.getElementById("dashboardDetails");
+
+            const statuses = [
+                "Scanning memory buffers...",
+                "Analyzing input streams...",
+                "Running heuristic checks...",
+                "Inspecting environment variables...",
+                "Checking integrity signatures...",
+                "Validating secure token...",
+                "Verifying database checksums...",
+                "Confirming backend alignment...",
+                "Purging verification codes...",
+                "Applying visual parameters...",
+                "VSS clearance established."
+            ];
+
+            let score = 10;
+            const intervalTime = 400; // 400ms per step -> 4 seconds total countdown
+
+            const timer = setInterval(() => {
+                score--;
+                if (vssValue) vssValue.textContent = score;
+                if (vssStatus) {
+                    vssStatus.textContent = statuses[10 - score] || "Clearance established.";
+                }
+
+                if (score === 0) {
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        vssPanel.classList.add("hidden");
+                        dashboardDetails.classList.remove("hidden");
+                    }, 500);
+                }
+            }, intervalTime);
+        });
+    </script>
+</body>
+</html>

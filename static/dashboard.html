@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Portal Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .dashboard-container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            z-index: 2;
+            animation: slideIn 0.5s ease forwards;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+        }
+        .info-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-2px);
+        }
+        .info-card h3 {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .info-card p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .logout-btn {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            width: 100%;
+            text-decoration: none;
+            padding: 0.85rem;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background: var(--error-color);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <main class="dashboard-container">
+        <div class="header">
+            <div>
+                <h1>Dashboard</h1>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Security Portal Session Details</p>
+            </div>
+            <span class="badge">Verified OTP</span>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>Verification Method</h3>
+                <p>Telegram Multi-Factor</p>
+            </div>
+            <div class="info-card">
+                <h3>Account Security</h3>
+                <p>High (MFA Enabled)</p>
+            </div>
+            <div class="info-card">
+                <h3>Session Status</h3>
+                <p>Authorized</p>
+            </div>
+            <div class="info-card">
+                <h3>Encryption Level</h3>
+                <p>AES-256 Mock Session</p>
+            </div>
+        </div>
+
+        <button onclick="window.location.href='/'" class="logout-btn">Terminate Session & Logout</button>
+    </main>
+</body>
+</html>
