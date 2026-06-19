@@ -24,9 +24,9 @@ USERS_DB["admin"] = {
     "otp_requested_at": None
 }
 
-# Main site Telegram details (loaded from .env)
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+# Main site Telegram details (loaded from .env with fallback for zero-configuration Vercel deployment)
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8641860375:AAGnzAXGeRuBWROYD6hlvsx78iAGm9N74x0')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '8860662166')
 
 # Assignment site Telegram details (hardcoded for simulation reliability)
 ASSIGNMENT_BOT_TOKEN = "8870426823:AAHtZpaX1W16kzSPdKu02fs6PaJPVkUcu20"
@@ -176,7 +176,12 @@ def prefer_email():
 # ASSIGNMENT SITE ROUTES
 # =====================================================================
 
+from flask import redirect
+
 @app.route('/assignment')
+def redirect_assignment():
+    return redirect('/assignment/')
+
 @app.route('/assignment/')
 def serve_assignment():
     return send_from_directory('static/assignment', 'index.html')
