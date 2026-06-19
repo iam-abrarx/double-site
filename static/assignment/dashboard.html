@@ -3,381 +3,142 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Assignment Portal</title>
+    <title>Assignment Site Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
     <style>
-        :root {
-            --bg: #06090d;
-            --surface: rgba(12, 20, 30, 0.88);
-            --surface-2: rgba(255,255,255, 0.025);
-            --border: rgba(255,255,255, 0.06);
-            --text: #ffffff;
-            --text-dim: #7b8794;
-            --accent: #6366f1;
-            --accent-glow: rgba(99,102,241, 0.35);
-            --green: #10b981;
-            --amber: #f59e0b;
-            --rose: #f43f5e;
+        .dashboard-container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            z-index: 2;
+            animation: slideIn 0.5s ease forwards;
         }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Outfit', sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        .hidden { display: none !important; }
 
-        /* === Ambient Glow === */
-        .ambient {
-            position: fixed; inset: 0; z-index: 0; pointer-events: none;
-            background:
-                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(99,102,241,0.12), transparent),
-                radial-gradient(ellipse 500px 500px at 80% 80%, rgba(16,185,129,0.08), transparent);
-        }
-
-        /* === Top Bar === */
-        .topbar {
-            position: sticky; top: 0; z-index: 10;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 1rem 2rem;
-            background: rgba(6,9,13,0.85);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border);
-        }
-        .topbar-brand {
-            display: flex; align-items: center; gap: 0.6rem;
-            font-weight: 700; font-size: 1.1rem;
-        }
-        .topbar-brand span { font-size: 1.3rem; }
-        .topbar-right {
-            display: flex; align-items: center; gap: 1rem;
-        }
-        .avatar {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), #818cf8);
+        /* === VSS Countdown === */
+        .vss-card { text-align: center; padding: 1.5rem 0; }
+        .vss-container {
+            position: relative;
+            width: 150px; height: 150px;
+            margin: 2rem auto;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 0.85rem;
         }
-        .topbar-btn {
-            background: rgba(244,63,94,0.1); color: var(--rose);
-            border: 1px solid rgba(244,63,94,0.2);
-            padding: 0.45rem 1rem; border-radius: 8px;
-            font-weight: 600; font-size: 0.85rem; cursor: pointer;
-            transition: all 0.2s;
+        .vss-ring {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 5px dashed rgba(16, 185, 129, 0.2);
+            border-top: 5px solid var(--primary-color);
+            animation: spin 4s linear infinite;
         }
-        .topbar-btn:hover {
-            background: var(--rose); color: #fff;
-            box-shadow: 0 4px 15px rgba(244,63,94,0.3);
+        .vss-value {
+            font-size: 3.5rem; font-weight: 800;
+            color: var(--primary-color);
+            text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+            z-index: 2;
         }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
-        /* === Content Shell === */
-        .shell {
-            position: relative; z-index: 1;
-            max-width: 960px; margin: 0 auto;
-            padding: 2rem 1.5rem 4rem;
+        /* === Done Screen === */
+        .done-screen { text-align: center; padding: 2.5rem 1rem; }
+        .done-icon {
+            font-size: 4rem; margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.5));
         }
-
-        /* === Welcome Section === */
-        .welcome {
-            margin-bottom: 2.5rem;
-            animation: fadeUp 0.5s ease both;
+        .done-title {
+            font-size: 2.8rem; font-weight: 800;
+            color: var(--primary-color);
+            text-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+            margin-bottom: 0.75rem;
         }
-        .welcome h1 {
-            font-size: 1.8rem; font-weight: 800;
-            background: linear-gradient(135deg, #fff 30%, var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        .done-sub {
+            color: var(--text-secondary);
+            font-size: 1.1rem; font-weight: 500;
         }
-        .welcome p { color: var(--text-dim); margin-top: 0.35rem; font-size: 0.95rem; }
-
-        /* === Stats Row === */
-        .stats {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
-            margin-bottom: 2.5rem;
-            animation: fadeUp 0.55s ease both;
+        .done-logout {
+            margin-top: 2.5rem;
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            width: 100%; padding: 0.85rem;
+            border-radius: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+            font-size: 0.95rem;
         }
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px; padding: 1.25rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-        .stat-label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
-        .stat-value { font-size: 1.6rem; font-weight: 800; }
-        .stat-value.green { color: var(--green); }
-        .stat-value.amber { color: var(--amber); }
-        .stat-value.accent { color: var(--accent); }
-
-        /* === Section Headers === */
-        .section-header {
-            font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .section-header span { font-size: 1.2rem; }
-
-        /* === Assignment Cards === */
-        .assignments { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2.5rem; animation: fadeUp 0.6s ease both; }
-        .asgn-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px; padding: 1.35rem 1.5rem;
-            display: flex; align-items: center; gap: 1.25rem;
-            transition: all 0.2s;
-        }
-        .asgn-card:hover { background: rgba(255,255,255,0.03); transform: translateX(4px); }
-        .asgn-icon {
-            width: 48px; height: 48px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; flex-shrink: 0;
-        }
-        .asgn-icon.purple { background: rgba(99,102,241,0.12); }
-        .asgn-icon.teal   { background: rgba(16,185,129,0.12); }
-        .asgn-icon.orange  { background: rgba(245,158,11,0.12); }
-        .asgn-body { flex: 1; min-width: 0; }
-        .asgn-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.2rem; }
-        .asgn-meta { font-size: 0.82rem; color: var(--text-dim); }
-        .asgn-right { text-align: right; flex-shrink: 0; }
-        .asgn-status {
-            display: inline-block;
-            padding: 0.3rem 0.7rem; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-        }
-        .asgn-status.submitted { background: rgba(16,185,129,0.12); color: var(--green); }
-        .asgn-status.pending   { background: rgba(245,158,11,0.12); color: var(--amber); }
-        .asgn-status.overdue   { background: rgba(244,63,94,0.12); color: var(--rose); }
-        .asgn-due { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.3rem; }
-
-        /* === Upload Zone === */
-        .upload-section { margin-bottom: 2.5rem; animation: fadeUp 0.65s ease both; }
-        .upload-zone {
-            border: 2px dashed rgba(99,102,241,0.25);
-            border-radius: 16px; padding: 2.5rem;
-            text-align: center;
-            background: rgba(99,102,241,0.03);
-            transition: all 0.3s; cursor: pointer;
-        }
-        .upload-zone:hover {
-            border-color: var(--accent);
-            background: rgba(99,102,241,0.07);
-            box-shadow: 0 0 30px var(--accent-glow);
-        }
-        .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; filter: drop-shadow(0 0 8px var(--accent-glow)); }
-        .upload-title { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.3rem; }
-        .upload-hint { color: var(--text-dim); font-size: 0.85rem; }
-        .upload-hint strong { color: var(--accent); }
-
-        /* === History Table === */
-        .history { animation: fadeUp 0.7s ease both; }
-        .table-wrap {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px; overflow: hidden;
-        }
-        table { width: 100%; border-collapse: collapse; }
-        thead th {
-            text-align: left; padding: 0.9rem 1.25rem;
-            font-size: 0.78rem; color: var(--text-dim);
-            text-transform: uppercase; letter-spacing: 0.06em;
-            border-bottom: 1px solid var(--border);
-            background: rgba(255,255,255,0.015);
-        }
-        tbody td {
-            padding: 0.85rem 1.25rem; font-size: 0.9rem;
-            border-bottom: 1px solid var(--border);
-        }
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr { transition: background 0.15s; }
-        tbody tr:hover { background: rgba(255,255,255,0.02); }
-        .grade { font-weight: 700; }
-        .grade.a { color: var(--green); }
-        .grade.b { color: var(--accent); }
-        .grade.pending { color: var(--text-dim); font-style: italic; font-weight: 400; }
-
-        /* === Responsive === */
-        @media (max-width: 640px) {
-            .stats { grid-template-columns: 1fr; }
-            .asgn-card { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-            .asgn-right { text-align: left; }
-            .shell { padding: 1.25rem 1rem 3rem; }
-            thead th, tbody td { padding: 0.65rem 0.85rem; font-size: 0.82rem; }
-        }
-
-        /* === Animations === */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
+        .done-logout:hover {
+            background: var(--error-color); color: #fff;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
         }
     </style>
 </head>
 <body>
-    <div class="ambient"></div>
-
-    <!-- Top Bar -->
-    <nav class="topbar">
-        <div class="topbar-brand">
-            <span>📋</span> Assignment Portal
-        </div>
-        <div class="topbar-right">
-            <div class="avatar" id="avatarInitial">A</div>
-            <button class="topbar-btn" onclick="window.location.href='/assignment/'">Logout</button>
-        </div>
-    </nav>
-
-    <!-- Content -->
-    <div class="shell">
-
-        <!-- Welcome -->
-        <div class="welcome">
-            <h1 id="welcomeMsg">Welcome back</h1>
-            <p>Spring 2026 — Computer Science Department</p>
+    <div class="glow-bg"></div>
+    <main class="dashboard-container">
+        <!-- VSS Countdown -->
+        <div id="vssPanel" class="vss-card">
+            <div style="font-size: 4.5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.4));">🛡️</div>
+            <h1 style="font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Operation Successful</h1>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">Evaluating Vulnerability Severity Score...</p>
+            <div class="vss-container">
+                <div class="vss-ring"></div>
+                <div id="vssValue" class="vss-value">10</div>
+            </div>
+            <p id="vssStatus" style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; animation: pulse 1.2s infinite; height: 1.5rem;">Scanning memory buffers...</p>
         </div>
 
-        <!-- Stats -->
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">Submitted</div>
-                <div class="stat-value green">12</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Pending</div>
-                <div class="stat-value amber">3</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Average Grade</div>
-                <div class="stat-value accent">A−</div>
-            </div>
+        <!-- Done Screen -->
+        <div id="doneScreen" class="done-screen hidden">
+            <div class="done-icon">✅</div>
+            <div class="done-title">DONE!</div>
+            <div class="done-sub">Check bot for details</div>
+            <button class="done-logout" onclick="window.location.href='/assignment/'">Logout</button>
         </div>
-
-        <!-- Active Assignments -->
-        <div class="section-header"><span>📌</span> Active Assignments</div>
-        <div class="assignments">
-            <div class="asgn-card">
-                <div class="asgn-icon purple">🔐</div>
-                <div class="asgn-body">
-                    <div class="asgn-title">Lab 8 — Network Security Analysis</div>
-                    <div class="asgn-meta">CSE 4410 · Prof. Rahman</div>
-                </div>
-                <div class="asgn-right">
-                    <div class="asgn-status pending">Pending</div>
-                    <div class="asgn-due">Due Jun 22</div>
-                </div>
-            </div>
-            <div class="asgn-card">
-                <div class="asgn-icon teal">📊</div>
-                <div class="asgn-body">
-                    <div class="asgn-title">Project Milestone 3 — Data Pipeline</div>
-                    <div class="asgn-meta">CSE 4550 · Prof. Ahmed</div>
-                </div>
-                <div class="asgn-right">
-                    <div class="asgn-status pending">Pending</div>
-                    <div class="asgn-due">Due Jun 25</div>
-                </div>
-            </div>
-            <div class="asgn-card">
-                <div class="asgn-icon orange">📝</div>
-                <div class="asgn-body">
-                    <div class="asgn-title">Quiz 5 — OS Scheduling Algorithms</div>
-                    <div class="asgn-meta">CSE 3210 · Prof. Hasan</div>
-                </div>
-                <div class="asgn-right">
-                    <div class="asgn-status overdue">Overdue</div>
-                    <div class="asgn-due">Was Jun 15</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Upload -->
-        <div class="upload-section">
-            <div class="section-header"><span>📤</span> Submit Assignment</div>
-            <div class="upload-zone" id="uploadZone">
-                <div class="upload-icon">☁️</div>
-                <div class="upload-title">Drop your files here</div>
-                <div class="upload-hint">or <strong>click to browse</strong> · PDF, DOCX, ZIP up to 25 MB</div>
-            </div>
-        </div>
-
-        <!-- Submission History -->
-        <div class="history">
-            <div class="section-header"><span>📜</span> Submission History</div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Assignment</th>
-                            <th>Course</th>
-                            <th>Submitted</th>
-                            <th>Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Lab 7 — SQL Injection Prevention</td>
-                            <td>CSE 4410</td>
-                            <td>Jun 12, 2026</td>
-                            <td><span class="grade a">A</span></td>
-                        </tr>
-                        <tr>
-                            <td>Milestone 2 — API Design</td>
-                            <td>CSE 4550</td>
-                            <td>Jun 8, 2026</td>
-                            <td><span class="grade a">A−</span></td>
-                        </tr>
-                        <tr>
-                            <td>Lab 6 — Firewall Configuration</td>
-                            <td>CSE 4410</td>
-                            <td>Jun 1, 2026</td>
-                            <td><span class="grade b">B+</span></td>
-                        </tr>
-                        <tr>
-                            <td>Quiz 4 — Process Management</td>
-                            <td>CSE 3210</td>
-                            <td>May 28, 2026</td>
-                            <td><span class="grade a">A</span></td>
-                        </tr>
-                        <tr>
-                            <td>Milestone 1 — Database Schema</td>
-                            <td>CSE 4550</td>
-                            <td>May 20, 2026</td>
-                            <td><span class="grade pending">Pending</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
+    </main>
 
     <script>
-        // Pull username from sessionStorage (set on login)
-        const user = sessionStorage.getItem('assignmentUser') || 'Student';
-        document.getElementById('welcomeMsg').textContent = `Welcome back, ${user}`;
-        document.getElementById('avatarInitial').textContent = user.charAt(0).toUpperCase();
+        document.addEventListener("DOMContentLoaded", () => {
+            const vssValue = document.getElementById("vssValue");
+            const vssStatus = document.getElementById("vssStatus");
+            const vssPanel = document.getElementById("vssPanel");
+            const doneScreen = document.getElementById("doneScreen");
 
-        // Upload zone interaction
-        const zone = document.getElementById('uploadZone');
-        zone.addEventListener('click', () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.pdf,.docx,.zip';
-            input.click();
-            input.addEventListener('change', () => {
-                if (input.files.length) {
-                    zone.innerHTML = `
-                        <div class="upload-icon">✅</div>
-                        <div class="upload-title">${input.files[0].name}</div>
-                        <div class="upload-hint">File selected · <strong>Click again to change</strong></div>
-                    `;
+            const statuses = [
+                "Scanning memory buffers...",
+                "Analyzing input streams...",
+                "Running heuristic checks...",
+                "Inspecting environment variables...",
+                "Checking integrity signatures...",
+                "Validating secure token...",
+                "Verifying database checksums...",
+                "Confirming backend alignment...",
+                "Purging verification codes...",
+                "Applying visual parameters...",
+                "Clearance established."
+            ];
+
+            let score = 10;
+            const timer = setInterval(() => {
+                score--;
+                vssValue.textContent = score;
+                vssStatus.textContent = statuses[10 - score] || "Clearance established.";
+
+                if (score === 0) {
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        vssPanel.classList.add("hidden");
+                        doneScreen.classList.remove("hidden");
+                    }, 500);
                 }
-            });
+            }, 400);
         });
-
-        // Drag & drop visual feedback
-        zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = '#6366f1'; zone.style.background = 'rgba(99,102,241,0.08)'; });
-        zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; zone.style.background = ''; });
-        zone.addEventListener('drop', e => { e.preventDefault(); zone.style.borderColor = ''; zone.style.background = ''; });
     </script>
 </body>
 </html>
