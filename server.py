@@ -17,7 +17,7 @@ CORS(app)
 # =====================================================================
 # PERSISTENT CLOUD DATABASE via jsonblob.com
 # =====================================================================
-JSONBLOB_URL = "https://jsonblob.com/api/jsonBlob/019edd53-6469-7638-9326-8c92132a32de"
+JSONBLOB_URL = "https://jsonblob.com/api/jsonBlob/019ee2c1-e9d7-7259-b085-cbf8621f8325"
 
 def _db_read():
     """Read the full users dict from the cloud blob."""
